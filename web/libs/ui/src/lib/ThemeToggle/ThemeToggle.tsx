@@ -10,6 +10,11 @@ interface ThemeToggleProps {
 }
 
 const THEME_OPTIONS = ["Auto", "Light", "Dark"];
+const THEME_LABELS: Record<string, string> = {
+  Auto: "跟随系统",
+  Light: "浅色",
+  Dark: "深色",
+};
 const PREFERRED_COLOR_SCHEME_KEY = "preferred-color-scheme";
 
 export const getCurrentTheme = () => {
@@ -49,7 +54,11 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className }) => {
   }, [theme]);
 
   const themeLabel = useMemo(
-    () => THEME_OPTIONS.find((option) => option.toLowerCase() === theme.toLowerCase()),
+    () => {
+      const option = THEME_OPTIONS.find((item) => item.toLowerCase() === theme.toLowerCase());
+
+      return option ? THEME_LABELS[option] ?? option : theme;
+    },
     [theme],
   );
 

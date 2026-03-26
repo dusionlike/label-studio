@@ -36,6 +36,7 @@ const supportedExtensions = {
   html: ["html", "htm", "xml"],
   pdf: ["pdf"],
   structuredData: ["csv", "tsv", "json"],
+  archive: ["zip"],
 };
 const allSupportedExtensions = flatten(Object.values(supportedExtensions));
 
@@ -190,6 +191,11 @@ export const ImportPage = ({
     uploading: [],
     ids: [],
   });
+  const hasTabularUploads = [...files.uploaded, ...files.uploading].some(({ file, name }) => {
+    const fileName = file ?? name;
+
+    return /\.[ct]sv$/i.test(fileName ?? "");
+  });
   const showList = Boolean(files.uploaded?.length || files.uploading?.length || sample);
 
   const loadFilesList = useCallback(
@@ -228,10 +234,11 @@ export const ImportPage = ({
   };
   const onFinish = useCallback(
     async (res) => {
-      const { could_be_tasks_list, data_columns, file_upload_ids } = res;
+      const { could_be_tasks_list, data_columns, file_upload_ids, found_formats } = res;
+      const hasTabularFiles = Boolean(found_formats?.[".csv"] || found_formats?.[".tsv"]);
 
       dispatch({ ids: file_upload_ids });
-      if (could_be_tasks_list && !csvHandling) setCsvHandling("choose");
+      if (could_be_tasks_list && hasTabularFiles && !csvHandling) setCsvHandling("choose");
       onWaiting?.(false);
       addColumns(data_columns);
 
@@ -359,6 +366,12 @@ export const ImportPage = ({
     }
   }, [project?.id, loadFilesList]);
 
+  useEffect(() => {
+    if (!hasTabularUploads && csvHandling === "choose") {
+      setCsvHandling(undefined);
+    }
+  }, [csvHandling, hasTabularUploads, setCsvHandling]);
+
   const urlRef = useRef();
 
   if (!project) return null;
@@ -403,7 +416,7 @@ export const ImportPage = ({
         <div
           className={importClass
             .elem("csv-handling")
-            .mod({ highlighted: highlightCsvHandling, hidden: !csvHandling })
+            .mod({ highlighted: highlightCsvHandling, hidden: !csvHandling || !hasTabularUploads })
             .toClassName()}
         >
           <span>将 CSV/TSV 视为</span>
@@ -467,6 +480,8 @@ export const ImportPage = ({
                       <dd>{supportedExtensions.text.join(", ")}</dd>
                       <dt>结构化数据</dt>
                       <dd>{supportedExtensions.structuredData.join(", ")}</dd>
+                      <dt>压缩数据集</dt>
+                      <dd>{supportedExtensions.archive.join(", ")}</dd>
                       <dt>PDF</dt>
                       <dd>{supportedExtensions.pdf.join(", ")}</dd>
                     </dl>
@@ -506,6 +521,7 @@ export const ImportPage = ({
                           </a>
                           。JSONL 或 Parquet（仅企业版）文件需要通过云存储导入。
                         </li>
+                        <li>支持导入 YOLOv8 ZIP 数据集，目前覆盖目标检测边界框数据。</li>
                         <li>
                           如需导入预标注数据，请查看{" "}
                           <a target="_blank" href="https://labelstud.io/guide/predictions.html" rel="noreferrer">

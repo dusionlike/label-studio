@@ -1,11 +1,11 @@
 {
   "projectCreation": [
     {
-      "title": "New Storage Connector",
-      "content": "You can connect Label Studio Enterprise to Databricks Unity Catalog (UC) Volumes to import files as tasks and export annotations.",
+      "title": "新的存储连接器",
+      "content": "你可以将 Label Studio Enterprise 连接到 Databricks Unity Catalog (UC) Volumes，用于导入任务文件和导出标注结果。",
       "closable": true,
       "link": {
-        "label": "Learn more",
+        "label": "了解更多",
         "url": "https://docs.humansignal.com/guide/storage.html#Databricks-Files-UC-Volumes",
         "params": {
           "experiment": "project_creation_tip",
@@ -14,10 +14,10 @@
       }
     },
     {
-      "title": "Did you know?",
-      "content": "Try Label Studio Starter Cloud, optimized for small teams and projects.",
+      "title": "你知道吗？",
+      "content": "可以试试 Label Studio Starter Cloud，针对小团队和小型项目做了优化。",
       "link": {
-        "label": "Learn more",
+        "label": "了解更多",
         "url": "https://humansignal.com/pricing/",
         "params": {
           "experiment": "project_creation_tip",
@@ -26,11 +26,11 @@
       }
     },
     {
-      "title": "Did you know?",
-      "content": "You can control access to specific projects and workspaces for internal team members and external annotators using Label Studio Enterprise.",
+      "title": "你知道吗？",
+      "content": "使用 Label Studio Enterprise，你可以为内部成员和外部标注人员精细控制项目与工作区访问权限。",
       "closable": true,
       "link": {
-        "label": "Learn more",
+        "label": "了解更多",
         "url": "https://docs.humansignal.com/guide/manage_users#Roles-in-Label-Studio-Enterprise",
         "params": {
           "experiment": "project_creation_tip",
@@ -39,11 +39,11 @@
       }
     },
     {
-      "title": "Labeling for GenAI",
-      "content": "Label Studio has templates available for supervised LLM fine-tuning, RAG retrieval ranking, RLHF, chatbot evaluation, and more.",
+      "title": "生成式 AI 标注",
+      "content": "Label Studio 提供了用于监督式 LLM 微调、RAG 检索排序、RLHF、聊天机器人评测等场景的模板。",
       "closable": true,
       "link": {
-        "label": "Explore templates",
+        "label": "查看模板",
         "url": "https://labelstud.io/templates/gallery_generative_ai",
         "params": {
           "experiment": "project_creation_tip",

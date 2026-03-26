@@ -107,7 +107,7 @@ export const EditorResizer: React.FC<EditorResizerProps> = ({
       onPointerDown={handlePointerDown}
       onDoubleClick={handleDoubleClick}
       aria-disabled={disabled}
-      title={disabled ? undefined : "Drag to resize. Double-click to collapse or expand."}
+      title={disabled ? undefined : "拖动以调整宽度，双击可折叠或展开。"}
     />
   );
 };
