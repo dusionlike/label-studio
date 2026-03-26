@@ -20,7 +20,7 @@ export const MachineLearningSettings = () => {
   const [loading, setLoading] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  useUpdatePageTitle(createTitleFromSegments([project?.title, "Model Settings"]));
+  useUpdatePageTitle(createTitleFromSegments([project?.title, "模型设置"]));
 
   const fetchBackends = useCallback(async () => {
     setLoading(true);
@@ -39,7 +39,7 @@ export const MachineLearningSettings = () => {
   const startTrainingModal = useCallback(
     (backend) => {
       const modalProps = {
-        title: "Start Model Training",
+        title: "启动模型训练",
         style: { width: 760 },
         closeOnClickOutside: true,
         body: <StartModelTraining backend={backend} />,
@@ -53,7 +53,7 @@ export const MachineLearningSettings = () => {
   const showRequestModal = useCallback(
     (backend) => {
       const modalProps = {
-        title: "Test Request",
+        title: "测试请求",
         style: { width: 760 },
         closeOnClickOutside: true,
         body: <TestRequest backend={backend} />,
@@ -68,7 +68,7 @@ export const MachineLearningSettings = () => {
     (backend) => {
       const action = backend ? "updateMLBackend" : "addMLBackend";
       const modalProps = {
-        title: `${backend ? "Edit" : "Connect"} Model`,
+        title: `${backend ? "编辑" : "连接"}模型`,
         style: { width: 760 },
         closeOnClickOutside: false,
         body: (
@@ -99,7 +99,7 @@ export const MachineLearningSettings = () => {
     <section>
       <div className="w-[42rem]">
         <Typography variant="headline" size="medium" className="mb-base">
-          Model
+          模型
         </Typography>
         {loading && <Spinner size={32} />}
         {loaded && backends.length === 0 && (
@@ -108,16 +108,16 @@ export const MachineLearningSettings = () => {
               size="medium"
               variant="primary"
               icon={<IconModels />}
-              title="Let's connect your first model"
-              description="Connect a machine learning model to generate live predictions for your project. Compare predictions, accelerate labeling with automatic prelabeling, and direct your team to the most impactful tasks through active learning."
+              title="连接你的第一个模型"
+              description="接入机器学习模型，为项目生成实时预测。你可以比较预测结果、通过自动预标注提升标注效率，并借助主动学习将团队资源聚焦到更重要的任务上。"
               actions={
                 <Button
                   variant="primary"
                   look="filled"
                   onClick={() => showMLFormModal()}
-                  aria-label="Add machine learning model"
+                  aria-label="添加机器学习模型"
                 >
-                  Connect Model
+                  连接模型
                 </Button>
               }
               footer={
@@ -128,10 +128,10 @@ export const MachineLearningSettings = () => {
                       target="_blank"
                       rel="noopener noreferrer"
                       data-testid="ml-help-link"
-                      aria-label="Learn more about machine learning models (opens in new window)"
+                      aria-label="了解更多机器学习模型信息（在新窗口打开）"
                       className="inline-flex items-center gap-1 hover:underline"
                     >
-                      Learn more
+                      了解更多
                       <IconExternal width={16} height={16} />
                     </a>
                   </Typography>
@@ -151,24 +151,23 @@ export const MachineLearningSettings = () => {
         {backends.length > 0 && (
           <div className="my-wide">
             <Typography size="small" className="text-neutral-content-subtler">
-              A connected model has been detected! If you wish to fetch predictions from this model, please follow these
-              steps:
+              已检测到已连接的模型。如果你希望从该模型获取预测结果，请按以下步骤操作：
             </Typography>
             <Typography size="small" className="text-neutral-content-subtler mt-base">
-              1. Navigate to the <i>Data Manager</i>.
+              1. 进入<i>数据管理</i>页面。
             </Typography>
             <Typography size="small" className="text-neutral-content-subtler mt-tighter">
-              2. Select the desired tasks.
+              2. 选择需要处理的任务。
             </Typography>
             <Typography size="small" className="text-neutral-content-subtler mt-tighter">
-              3. Click on <i>Batch predictions</i> from the <i>Actions</i> menu.
+              3. 在<i>操作</i>菜单中点击<i>批量预测</i>。
             </Typography>
             <Typography size="small" className="text-neutral-content-subtler mt-base">
-              If you want to use the model predictions for prelabeling, please configure this in the{" "}
+              如果你希望将模型预测用于预标注，请前往{" "}
               <NavLink to="annotation" className="hover:underline">
-                Annotation settings
+                标注设置
               </NavLink>
-              .
+              中进行配置。
             </Typography>
           </div>
         )}
@@ -186,8 +185,8 @@ export const MachineLearningSettings = () => {
 
                 <div>
                   <Toggle
-                    label="Start model training on annotation submission"
-                    description="This option will send a request to /train with information about annotations. You can use this to enable an Active Learning loop. You can also manually start training through model menu in its card."
+                    label="提交标注时启动模型训练"
+                    description="启用后，系统会携带标注信息向 /train 发送请求。你可以用它构建主动学习闭环，也可以在模型卡片菜单中手动启动训练。"
                     name="start_training_on_annotation_update"
                   />
                 </div>
@@ -198,10 +197,10 @@ export const MachineLearningSettings = () => {
           {backends.length > 0 && (
             <Form.Actions>
               <Form.Indicator>
-                <span case="success">Saved!</span>
+                <span case="success">已保存！</span>
               </Form.Indicator>
-              <Button type="submit" look="primary" className="w-[120px]" aria-label="Save machine learning settings">
-                Save
+              <Button type="submit" look="primary" className="w-[120px]" aria-label="保存机器学习设置">
+                保存
               </Button>
             </Form.Actions>
           )}
@@ -211,5 +210,5 @@ export const MachineLearningSettings = () => {
   );
 };
 
-MachineLearningSettings.title = "Model";
+MachineLearningSettings.title = "模型";
 MachineLearningSettings.path = "/ml";

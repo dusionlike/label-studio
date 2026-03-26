@@ -2,6 +2,7 @@ import { Label, Toggle, Select, Tooltip, cn } from "@humansignal/ui";
 import { Form, Input } from "apps/labelstudio/src/components/Form";
 import { IconDocument, IconSearch } from "@humansignal/icons";
 import { formatDistanceToNow } from "date-fns";
+import { zhCN } from "date-fns/locale";
 import type { ForwardedRef } from "react";
 
 interface PreviewStepProps {
@@ -23,22 +24,22 @@ interface PreviewStepProps {
 
 const regexFilters = [
   {
-    title: "Images",
+    title: "图片",
     regex: ".*.(jpe?g|png|gif)$",
     blob: true,
   },
   {
-    title: "Videos",
+    title: "视频",
     regex: ".*\\.(mp4|avi|mov|wmv|webm)$",
     blob: true,
   },
   {
-    title: "Audio",
+    title: "音频",
     regex: ".*\\.(mp3|wav|ogg|flac)$",
     blob: true,
   },
   {
-    title: "Tabular",
+    title: "表格数据",
     regex: ".*\\.(csv|tsv)$",
     blob: true,
   },
@@ -58,7 +59,7 @@ const regexFilters = [
     blob: false,
   },
   {
-    title: "All Tasks Files",
+    title: "全部任务文件",
     regex: ".*\\.(json|jsonl|parquet)$",
     blob: false,
   },
@@ -83,17 +84,17 @@ export const PreviewStep = ({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold">Configure Import Settings & Preview Data</h2>
-        <p className="text-muted-foreground">Set up filters for your files and preview what will be synchronized</p>
+        <h2 className="text-xl font-semibold">配置导入设置并预览数据</h2>
+        <p className="text-muted-foreground">设置文件筛选条件，并预览将被同步的数据</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left Column Header */}
-        <h4>Import Configuration</h4>
+        <h4>导入配置</h4>
 
         {/* Right Column Header with Button */}
         <div className="flex justify-between items-center">
-          <h4>Files Preview</h4>
+          <h4>文件预览</h4>
         </div>
 
         {/* Left Column: Configuration */}
@@ -112,11 +113,11 @@ export const PreviewStep = ({
               {/* Path/Bucket Prefix Section - Hide for localfiles since it has its own path field */}
               {type !== "localfiles" && (
                 <div className="space-y-2">
-                  <Label text={`${type === "redis" ? "Path to Files" : "Bucket Prefix"} (optional)`} />
+                  <Label text={`${type === "redis" ? "文件路径" : "存储桶前缀"}（可选）`} />
                   <p className="text-sm text-muted-foreground">
                     {type === "redis"
-                      ? "Specify the folder path within your storage where your files are located"
-                      : "Specify the folder path within your bucket where your files are located"}
+                      ? "指定存储中放置文件的目录路径"
+                      : "指定存储桶中放置文件的目录路径"}
                   </p>
                   <Input
                     id={type === "redis" ? "path" : "prefix"}
@@ -127,7 +128,7 @@ export const PreviewStep = ({
                       // Reset preview when prefix/path changes
                       onImportSettingsChange?.();
                     }}
-                    placeholder="path/to/files/ or leave empty for root"
+                    placeholder="例如 path/to/files/，留空则表示根目录"
                     style={{ width: "100%" }}
                     required={false}
                     skip={false}
@@ -140,8 +141,8 @@ export const PreviewStep = ({
 
               {/* Import Method */}
               <div className="space-y-2">
-                <Label text="Import Method (optional)" />
-                <p className="text-sm text-muted-foreground">Choose how to interpret your data from storage</p>
+                <Label text="导入方式（可选）" />
+                <p className="text-sm text-muted-foreground">选择如何解析存储中的数据</p>
                 <Select
                   name="use_blob_urls"
                   value={formData.use_blob_urls ? "Files" : "Tasks"}
@@ -162,22 +163,22 @@ export const PreviewStep = ({
                     [
                       {
                         value: "Files",
-                        label: "Files - Automatically creates a task for each storage object (e.g. JPG, MP3, TXT)",
+                        label: "文件模式：为每个存储对象自动创建一个任务（如 JPG、MP3、TXT）",
                       },
                       {
                         value: "Tasks",
-                        label: "Tasks - Treat each JSON, JSONL, or Parquet as one or more task definitions per file",
+                        label: "任务模式：将每个 JSON、JSONL 或 Parquet 文件解析为一个或多个任务定义",
                       },
                     ] as any
                   }
-                  placeholder="Select import method"
+                  placeholder="请选择导入方式"
                 />
               </div>
 
               {/* File Filter Section */}
               <div className="space-y-2">
-                <Label text="File Name Filter (optional)" />
-                <p className="text-sm text-muted-foreground">Use regex patterns to filter which files are imported</p>
+                <Label text="文件名筛选（可选）" />
+                <p className="text-sm text-muted-foreground">使用正则表达式筛选要导入的文件</p>
                 <Input
                   id="regex_filter"
                   name="regex_filter"
@@ -189,8 +190,8 @@ export const PreviewStep = ({
                   }}
                   placeholder={
                     formData.use_blob_urls
-                      ? ".*\\.(jpg|png)$ - imports only JPG, PNG files"
-                      : ".*\\.(json|jsonl|parquet)$ - imports task definitions"
+                      ? ".*\\.(jpg|png)$：仅导入 JPG、PNG 文件"
+                      : ".*\\.(json|jsonl|parquet)$：仅导入任务定义文件"
                   }
                   style={{ width: "100%" }}
                   label=""
@@ -207,7 +208,7 @@ export const PreviewStep = ({
                 />
 
                 <div className="flex flex-wrap gap-x-2 items-center text-xs">
-                  <span className="text-muted-foreground">Common filters:</span>
+                  <span className="text-muted-foreground">常用筛选：</span>
                   {regexFilters
                     .filter((r) => r.blob === formData.use_blob_urls)
                     .map((r) => {
@@ -239,8 +240,8 @@ export const PreviewStep = ({
               {/* Scan All Subfolders */}
               <div className="flex items-center justify-between">
                 <div>
-                  <Label text="Scan all sub-folders" className="block mb-2" />
-                  <p className="text-sm text-muted-foreground">Include files from all nested folders</p>
+                  <Label text="扫描全部子目录" className="block mb-2" />
+                  <p className="text-sm text-muted-foreground">包含所有嵌套目录中的文件</p>
                 </div>
                 <Toggle
                   checked={formData.recursive_scan ?? false}
@@ -270,10 +271,9 @@ export const PreviewStep = ({
                 <div className="rounded-full bg-muted p-3 mb-4">
                   <IconDocument className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="font-medium mb-1">No Preview Available</h3>
+                <h3 className="font-medium mb-1">暂无预览</h3>
                 <p className="text-sm text-muted-foreground max-w-md">
-                  Configure your import settings and click "Load Preview" to see a sample of files that will be
-                  imported.
+                  请先配置导入设置，然后点击“加载预览”查看将要导入的文件样例。
                 </p>
               </div>
             ) : filesPreview.length === 0 ? (
@@ -282,10 +282,9 @@ export const PreviewStep = ({
                 <div className="rounded-full bg-muted p-3 mb-4">
                   <IconSearch className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="font-medium mb-1">No Files Found</h3>
+                <h3 className="font-medium mb-1">未找到文件</h3>
                 <p className="text-sm text-muted-foreground max-w-md">
-                  No files matching your current criteria were found. Try adjusting your filter settings and reload the
-                  preview.
+                  未找到符合当前条件的文件。请调整筛选设置后重新加载预览。
                 </p>
               </div>
             ) : (
@@ -317,13 +316,14 @@ export const PreviewStep = ({
                               file.key
                             )
                           ) : (
-                            <span className="italic">... preview limit reached ...</span>
+                            <span className="italic">……已达到预览上限……</span>
                           )}
                         </div>
                       </Tooltip>
                       <div className="flex items-center space-x-1 text-muted-foreground whitespace-nowrap">
                         <span>
-                          {file.last_modified && formatDistanceToNow(new Date(file.last_modified), { addSuffix: true })}
+                          {file.last_modified &&
+                            formatDistanceToNow(new Date(file.last_modified), { addSuffix: true, locale: zhCN })}
                         </span>
                         <span className="mx-0.5">•</span>
                         <span>{file.size && formatSize(file.size)}</span>

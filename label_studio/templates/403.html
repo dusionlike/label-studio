@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block page_labeling %}
-  <title>403 | Label Studio</title>
+  <title>403 | 数据标注平台</title>
   {{ block.super }}
 {% endblock %}
 
@@ -14,11 +14,11 @@
 {% block content %}
 <div class="ls-global-error">
   <img class="ls-global-error__heidi" src="{{ settings.HOSTNAME }}{% static 'images/heidi-403.svg' %}" alt="Heidi's down" draggable="false" />
-  <h1>Uh oh, this is not permitted.</h1>
-  <h2>Here’s a few things you can try:</h2>
+  <h1>当前操作无权限执行。</h1>
+  <h2>你可以尝试以下操作：</h2>
   <p class="ls-global-error__actions">
-    <button onClick="history.back()">Go Back</button>
-    <button onClick="window.location.href='/'" class="ls-global-error__primary_button">Go to Home</button>
+    <button onClick="history.back()">返回上一页</button>
+    <button onClick="window.location.href='/'" class="ls-global-error__primary_button">返回首页</button>
   </p>
 </div>
 {% endblock %}

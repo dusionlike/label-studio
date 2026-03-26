@@ -2,7 +2,7 @@
 {% load static %}
 
 {% block page_labeling %}
-  <title>500 | Label Studio</title>
+  <title>500 | 数据标注平台</title>
   {{ block.super }}
 {% endblock %}
 
@@ -14,12 +14,12 @@
 {% block content %}
 <div class="ls-global-error">
   <img class="ls-global-error__heidi" src="{{ settings.HOSTNAME }}{% static 'images/heidi-500.svg' %}" alt="Heidi's down" draggable="false" />
-  <h1>Uh oh, something went wrong.</h1>
-  <h2>Here’s a few things you can try:</h2>
+  <h1>页面发生错误。</h1>
+  <h2>你可以尝试以下操作：</h2>
   <p class="ls-global-error__actions">
-    <button onClick="history.back()">Go Back</button>
-    <button onClick="location.reload()">Refresh</button>
-    <button onClick="window.location.href='/'" class="ls-global-error__primary_button">Go to Home</button>
+    <button onClick="history.back()">返回上一页</button>
+    <button onClick="location.reload()">刷新页面</button>
+    <button onClick="window.location.href='/'" class="ls-global-error__primary_button">返回首页</button>
   </p>
 </div>
 {% endblock %}
