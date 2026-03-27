@@ -7,6 +7,9 @@ import zipfile
 import pytest
 import requests_mock
 import ujson as json
+from data_import.models import FileUpload
+from django.core.files.uploadedfile import SimpleUploadedFile
+from PIL import Image
 from projects.models import Project
 from rest_framework.authtoken.models import Token
 from tasks.models import Annotation, Prediction, Task
@@ -247,6 +250,168 @@ def test_txt_task_upload(setup_project_dialog, format_type, tasks, status_code, 
 
     assert r.status_code == status_code, f'Upload one task {format_type} failed. Response data: {r.data}'
     assert Task.objects.filter(project=setup_project_dialog.project.id).count() == task_count * multiplier
+
+
+@pytest.mark.django_db
+def test_yolov8_zip_dataset_upload(setup_project_dialog):
+    setup_project_dialog.project.label_config = (
+        '<View>'
+        '<Image name="image" value="$image"/>'
+        '<RectangleLabels name="label" toName="image">'
+        '<Label value="cat"/>'
+        '<Label value="dog"/>'
+        '</RectangleLabels>'
+        '</View>'
+    )
+    setup_project_dialog.project.save(update_fields=['label_config'])
+
+    image_buffer = io.BytesIO()
+    Image.new('RGB', (100, 200), color='white').save(image_buffer, format='JPEG')
+    image_buffer.seek(0)
+
+    archive_buffer = io.BytesIO()
+    with zipfile.ZipFile(archive_buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            'dataset/data.yaml',
+            'train: images/train\nval: images/val\nnames:\n  0: cat\n  1: dog\n',
+        )
+        archive.writestr('dataset/images/train/sample.jpg', image_buffer.getvalue())
+        archive.writestr('dataset/labels/train/sample.txt', '0 0.5 0.5 0.4 0.2\n1 0.25 0.25 0.1 0.1\n')
+    archive_buffer.seek(0)
+    archive_buffer.name = 'dataset.zip'
+
+    response = setup_project_dialog.post(setup_project_dialog.urls.task_bulk, {'dataset.zip': archive_buffer})
+
+    assert response.status_code == 201, response.content
+
+    task = Task.objects.get(project=setup_project_dialog.project.id)
+    annotation = Annotation.objects.get(task=task)
+    extracted_image_upload = FileUpload.objects.filter(project=setup_project_dialog.project.id, file__endswith='sample.jpg')
+
+    assert 'image' in task.data
+    assert task.data['image'].startswith('/data/upload/')
+    assert task.data['image'].endswith('.jpg')
+    assert extracted_image_upload.count() == 1
+
+    image_response = setup_project_dialog.get(task.data['image'])
+
+    assert image_response.status_code == 200
+    assert annotation.ground_truth is True
+    assert len(annotation.result) == 2
+
+    first_result = annotation.result[0]
+    second_result = annotation.result[1]
+
+    assert first_result['from_name'] == 'label'
+    assert first_result['to_name'] == 'image'
+    assert first_result['type'] == 'rectanglelabels'
+    assert first_result['value']['rectanglelabels'] == ['cat']
+    assert first_result['value']['x'] == pytest.approx(30)
+    assert first_result['value']['y'] == pytest.approx(40)
+    assert first_result['value']['width'] == pytest.approx(40)
+    assert first_result['value']['height'] == pytest.approx(20)
+    assert first_result['original_width'] == 100
+    assert first_result['original_height'] == 200
+
+    assert second_result['value']['rectanglelabels'] == ['dog']
+    assert second_result['value']['x'] == pytest.approx(20)
+    assert second_result['value']['y'] == pytest.approx(20)
+    assert second_result['value']['width'] == pytest.approx(10)
+    assert second_result['value']['height'] == pytest.approx(10)
+
+
+@pytest.mark.django_db
+def test_yolov8_zip_reimport_works_when_files_as_tasks_list_is_false(setup_project_dialog):
+    setup_project_dialog.project.label_config = (
+        '<View>'
+        '<Image name="image" value="$image"/>'
+        '<RectangleLabels name="label" toName="image">'
+        '<Label value="cat"/>'
+        '<Label value="dog"/>'
+        '</RectangleLabels>'
+        '</View>'
+    )
+    setup_project_dialog.project.save(update_fields=['label_config'])
+
+    image_buffer = io.BytesIO()
+    Image.new('RGB', (100, 200), color='white').save(image_buffer, format='JPEG')
+    image_buffer.seek(0)
+
+    archive_buffer = io.BytesIO()
+    with zipfile.ZipFile(archive_buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            'dataset/data.yaml',
+            'train: images/train\nval: images/val\nnames:\n  0: cat\n  1: dog\n',
+        )
+        archive.writestr('dataset/images/train/sample.jpg', image_buffer.getvalue())
+        archive.writestr('dataset/labels/train/sample.txt', '0 0.5 0.5 0.4 0.2\n1 0.25 0.25 0.1 0.1\n')
+    archive_bytes = archive_buffer.getvalue()
+
+    file_upload = FileUpload.objects.create(
+        user=setup_project_dialog.user,
+        project=setup_project_dialog.project,
+        file=SimpleUploadedFile('dataset.zip', archive_bytes, content_type='application/zip'),
+    )
+
+    response = setup_project_dialog.post(
+        f'/api/projects/{setup_project_dialog.project.id}/reimport',
+        data=json.dumps({'file_upload_ids': [file_upload.id], 'files_as_tasks_list': False}),
+        content_type='application/json',
+    )
+
+    assert response.status_code == 201, response.content
+    assert response.data['task_count'] == 1
+    assert response.data['annotation_count'] == 1
+
+    task = Task.objects.get(project=setup_project_dialog.project.id)
+    annotation = Annotation.objects.get(task=task)
+
+    assert 'image' in task.data
+    assert task.data['image'].endswith('.jpg')
+    assert len(annotation.result) == 2
+    assert annotation.result[0]['value']['rectanglelabels'] == ['cat']
+    assert annotation.result[1]['value']['rectanglelabels'] == ['dog']
+
+
+@pytest.mark.django_db
+def test_yolov8_zip_upload_auto_adds_missing_rectanglelabels(setup_project_dialog):
+    setup_project_dialog.project.label_config = (
+        '<View>'
+        '<Image name="image" value="$image"/>'
+        '<RectangleLabels name="label" toName="image">'
+        '<Label value="Airplane"/>'
+        '<Label value="Car"/>'
+        '</RectangleLabels>'
+        '</View>'
+    )
+    setup_project_dialog.project.save(update_fields=['label_config'])
+
+    image_buffer = io.BytesIO()
+    Image.new('RGB', (100, 200), color='white').save(image_buffer, format='JPEG')
+    image_buffer.seek(0)
+
+    archive_buffer = io.BytesIO()
+    with zipfile.ZipFile(archive_buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr(
+            'dataset/data.yaml',
+            'train: images/train\nval: images/val\nnames:\n  0: cat\n  1: dog\n',
+        )
+        archive.writestr('dataset/images/train/sample.jpg', image_buffer.getvalue())
+        archive.writestr('dataset/labels/train/sample.txt', '0 0.5 0.5 0.4 0.2\n1 0.25 0.25 0.1 0.1\n')
+    archive_buffer.seek(0)
+    archive_buffer.name = 'dataset.zip'
+
+    response = setup_project_dialog.post(setup_project_dialog.urls.task_bulk, {'dataset.zip': archive_buffer})
+
+    assert response.status_code == 201, response.content
+
+    setup_project_dialog.project.refresh_from_db()
+    assert 'value="cat"' in setup_project_dialog.project.label_config
+    assert 'value="dog"' in setup_project_dialog.project.label_config
+
+    annotation = Annotation.objects.get(task__project=setup_project_dialog.project.id)
+    assert annotation.result[0]['value']['rectanglelabels'] == ['cat']
+    assert annotation.result[1]['value']['rectanglelabels'] == ['dog']
 
 
 @pytest.mark.parametrize(

@@ -926,14 +926,26 @@ class UploadedFileResponse(generics.RetrieveAPIView):
         logger.debug(f'Fetch uploaded file by user {request.user} => {file}')
         file_upload = FileUpload.objects.filter(file=file).last()
 
-        if not file_upload.has_permission(request.user):
-            return Response(status=status.HTTP_403_FORBIDDEN)
+        if file_upload is not None:
+            if not file_upload.has_permission(request.user):
+                return Response(status=status.HTTP_403_FORBIDDEN)
 
-        file = file_upload.file
-        if file.storage.exists(file.name):
-            content_type, encoding = mimetypes.guess_type(str(file.name))
+            file_obj = file_upload.file
+        else:
+            file_obj = None
+            project_id = filename.split('/', 1)[0]
+
+            if project_id.isdigit() and Project.objects.for_user(request.user).filter(pk=int(project_id)).exists():
+                storage = FileUpload._meta.get_field('file').storage
+
+                if storage.exists(file):
+                    file_obj = storage.open(file, mode='rb')
+                    file_obj.name = file
+
+        if file_obj is not None:
+            content_type, encoding = mimetypes.guess_type(str(file_obj.name))
             content_type = content_type or 'application/octet-stream'
-            return RangedFileResponse(request, file.open(mode='rb'), content_type=content_type)
+            return RangedFileResponse(request, file_obj, content_type=content_type)
 
         return Response(status=status.HTTP_404_NOT_FOUND)
 

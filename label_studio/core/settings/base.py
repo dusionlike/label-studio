@@ -515,6 +515,7 @@ SUPPORTED_EXTENSIONS = set(
         '.svg',
         '.tsv',
         '.txt',
+        '.zip',
         '.wav',
         '.xml',
         '.mp4',

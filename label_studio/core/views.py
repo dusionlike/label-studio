@@ -150,30 +150,24 @@ def samples_paragraphs(request):
 
 
 def heidi_tips(request):
-    """Fetch live tips from github raw liveContent.json to avoid caching and client side CORS issues"""
-    url = 'https://raw.githubusercontent.com/HumanSignal/label-studio/refs/heads/develop/web/apps/labelstudio/src/components/HeidiTips/liveContent.json'
+    """Return locally bundled Heidi tips content for self-hosted deployments."""
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    local_content_path = os.path.join(
+        repo_root,
+        'web',
+        'apps',
+        'labelstudio',
+        'src',
+        'components',
+        'HeidiTips',
+        'liveContent.json',
+    )
 
-    response = None
     try:
-        response = requests.get(
-            url,
-            headers={'Cache-Control': 'no-cache', 'Content-Type': 'application/json', 'Accept': 'application/json'},
-            timeout=5,
-        )
-        # Raise an exception for bad status codes to avoid caching
-        response.raise_for_status()
-    # Catch all exceptions and return either the status code if there was a response, or default to 404 if there are network issues
-    # This is done this way to catch thrown exceptions from the request itself which will occur for air-gapped environments
-    except Exception:
-        # Any other HTTP error will return the error code, and other errors like connection/timeout errors will be a 404
-        content = {}
-        status_code = 404
-        if response is not None:
-            content['detail'] = response.reason
-            status_code = response.status_code
-        return HttpResponse(json.dumps(content), content_type='application/json', status=status_code)
-
-    return HttpResponse(response.content, content_type='application/json')
+        with open(local_content_path, encoding='utf-8') as content_file:
+            return HttpResponse(content_file.read(), content_type='application/json')
+    except FileNotFoundError:
+        return HttpResponse(json.dumps({'detail': 'Heidi tips content not found'}), content_type='application/json', status=404)
 
 
 def static_file_with_host_resolver(path_on_disk, content_type):

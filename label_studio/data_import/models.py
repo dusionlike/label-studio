@@ -3,7 +3,9 @@
 import logging
 import os
 import uuid
+import zipfile
 from collections import Counter
+from xml.etree.ElementTree import SubElement
 
 import ijson
 import pandas as pd
@@ -14,10 +16,14 @@ except:  # noqa: E722
     import json
 
 from core.utils.exceptions import extract_message
+from defusedxml import ElementTree as SafeElementTree
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import models
 from django.utils.functional import cached_property
 from rest_framework.exceptions import ValidationError
+
+from .yolo import get_yolov8_class_names, is_yolov8_zip, load_yolov8_tasks
 
 logger = logging.getLogger(__name__)
 
@@ -245,9 +251,94 @@ class FileUpload(models.Model):
             tasks = [{'data': {settings.DATA_UNDEFINED_NAME: self.url}}]
         return tasks
 
+    def _save_extracted_asset(self, filename, content):
+        from .uploader import create_file_upload
+
+        extracted_asset = create_file_upload(
+            self.user,
+            self.project,
+            ContentFile(content, name=os.path.basename(filename)),
+        )
+
+        return extracted_asset.url
+
+    def _get_yolo_import_targets(self):
+        try:
+            root = SafeElementTree.fromstring(self.project.label_config)
+        except Exception as exc:
+            raise ValidationError(f'无法解析当前项目的标注配置：{exc}')
+
+        image_name = None
+        control_name = None
+        control_element = None
+        configured_labels = []
+
+        for element in root.iter():
+            if element.tag == 'Image' and not image_name:
+                image_name = element.attrib.get('name')
+            elif element.tag == 'RectangleLabels' and not control_name:
+                control_name = element.attrib.get('name')
+                control_element = element
+                configured_labels = [
+                    child.attrib.get('value') for child in element if child.tag == 'Label' and child.attrib.get('value')
+                ]
+
+            if image_name and control_name:
+                break
+
+        if not image_name or not control_name:
+            raise ValidationError(
+                'YOLOv8 ZIP 导入要求项目标注配置中至少包含一个 Image 对象标签和一个 RectangleLabels 控件标签。'
+            )
+
+        return image_name, control_name, configured_labels, root, control_element
+
+    def _sync_yolo_labels(self, class_names):
+        image_name, control_name, configured_labels, root, control_element = self._get_yolo_import_targets()
+
+        if control_element is None:
+            raise ValidationError('YOLOv8 ZIP 导入要求项目标注配置中至少包含一个 RectangleLabels 控件标签。')
+
+        missing_labels = [label for label in class_names if label not in configured_labels]
+
+        if missing_labels:
+            for label in missing_labels:
+                SubElement(control_element, 'Label', {'value': label})
+
+            self.project.label_config = SafeElementTree.tostring(root, encoding='unicode')
+            self.project.save(update_fields=['label_config'])
+            configured_labels = configured_labels + missing_labels
+
+        return image_name, control_name, configured_labels
+
+    def read_tasks_list_from_zip(self):
+        logger.debug('Read tasks list from ZIP file {}'.format(self.filepath))
+
+        try:
+            with self.file.open('rb') as uploaded_file:
+                with zipfile.ZipFile(uploaded_file) as archive:
+                    if is_yolov8_zip(archive):
+                        class_names = get_yolov8_class_names(archive)
+                        image_name, control_name, configured_labels = self._sync_yolo_labels(class_names)
+                        return load_yolov8_tasks(
+                            archive,
+                            image_name,
+                            control_name,
+                            self._save_extracted_asset,
+                            configured_labels=configured_labels,
+                        )
+        except ValidationError:
+            raise
+        except zipfile.BadZipFile as exc:
+            raise ValidationError(f'无效的 ZIP 文件：{exc}')
+
+        raise ValidationError(
+            '当前 ZIP 导入仅支持 YOLOv8 目标检测数据集，请确保压缩包中包含 data.yaml、images/ 和 labels/ 目录。'
+        )
+
     @property
     def format_could_be_tasks_list(self):
-        return self.format in ('.csv', '.tsv', '.txt')
+        return self.format in ('.csv', '.tsv', '.txt', '.zip')
 
     def read_tasks(self, file_as_tasks_list=True):
         file_format = self.format
@@ -259,6 +350,8 @@ class FileUpload(models.Model):
                 tasks = self.read_tasks_list_from_tsv()
             elif file_format == '.txt' and file_as_tasks_list:
                 tasks = self.read_tasks_list_from_txt()
+            elif file_format == '.zip':
+                tasks = self.read_tasks_list_from_zip()
             elif file_format == '.json':
                 tasks = self.read_tasks_list_from_json()
 
@@ -298,6 +391,8 @@ class FileUpload(models.Model):
                     tasks = self.read_tasks_list_from_tsv()
                 elif file_format == '.txt' and file_as_tasks_list:
                     tasks = self.read_tasks_list_from_txt()
+                elif file_format == '.zip':
+                    tasks = self.read_tasks_list_from_zip()
                 elif not self.project.one_object_in_label_config:
                     raise ValidationError(
                         'Your label config has more than one data key and direct file upload supports only '
