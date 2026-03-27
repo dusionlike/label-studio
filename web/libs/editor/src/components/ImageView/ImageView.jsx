@@ -438,6 +438,8 @@ const Crosshair = memo(
   }),
 );
 
+const RECTANGLE_CROSSHAIR_TOOL = /Rectangle(?:3Point)?Tool/;
+
 const PixelGridLayer = observer(({ item }) => {
   const ZOOM_THRESHOLD = 20;
 
@@ -839,7 +841,14 @@ export default observer(
 
     updateCrosshair = (e) => {
       if (this.crosshairRef.current) {
-        const { x, y } = e.currentTarget.getPointerPosition();
+        const pointerPosition =
+          e.currentTarget?.getPointerPosition?.() ??
+          e.target?.getStage?.()?.getPointerPosition?.() ??
+          this.props.item.stageRef?.getPointerPosition?.();
+
+        if (!pointerPosition) return;
+
+        const { x, y } = pointerPosition;
         this.crosshairRef.current.updatePointer(...this.props.item.fixZoomedCoords([x, y]));
       }
     };
@@ -1396,6 +1405,7 @@ const StageContent = observer(({ item, store, state, crosshairRef }) => {
   const paginationEnabled = !!item.isMultiItem;
   const wrapperClasses = [styles.wrapperComponent, item.images.length > 1 ? styles.withGallery : styles.wrapper];
   const tool = item.getToolsManager().findSelectedTool();
+  const showCrosshair = item.crosshair || RECTANGLE_CROSSHAIR_TOOL.test(tool?.toolName ?? "");
 
   if (paginationEnabled) wrapperClasses.push(styles.withPagination);
 
@@ -1444,7 +1454,7 @@ const StageContent = observer(({ item, store, state, crosshairRef }) => {
       <DrawingRegion item={item} />
       {item.smoothingEnabled === false && <PixelGridLayer item={item} />}
 
-      {item.crosshair && (
+      {showCrosshair && (
         <Crosshair
           ref={crosshairRef}
           width={isFF(FF_ZOOM_OPTIM) ? item.containerWidth : item.stageWidth}

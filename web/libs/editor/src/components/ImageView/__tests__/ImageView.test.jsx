@@ -635,6 +635,21 @@ describe("ImageView", () => {
     expect(crosshairLayer).toBeTruthy();
   });
 
+  it("renders crosshair for rectangle tools even when item.crosshair is false", () => {
+    const store = createStore();
+    const item = createItem({
+      getToolsManager: () => ({
+        findSelectedTool: () => ({ toolName: "RectangleTool" }),
+        allTools: () => [],
+      }),
+    });
+    item.store = store;
+    const { container } = render(<ImageView item={item} store={store} />);
+    const layers = container.querySelectorAll('[data-testid="konva-layer"]');
+    const crosshairLayer = Array.from(layers).find((el) => el.getAttribute("name") === "crosshair");
+    expect(crosshairLayer).toBeTruthy();
+  });
+
   it("updateCrosshair calls crosshairRef.current.updatePointer when crosshairRef is set", () => {
     const store = createStore();
     const item = createItem({ crosshair: true });
