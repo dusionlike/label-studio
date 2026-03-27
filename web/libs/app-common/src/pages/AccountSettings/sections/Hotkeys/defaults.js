@@ -1,4 +1,4 @@
-export const DEFAULT_HOTKEYS = [
+const BASE_DEFAULT_HOTKEYS = [
   // Annotation Controls
   {
     id: 100,
@@ -658,57 +658,138 @@ export const DEFAULT_HOTKEYS = [
   },
 ];
 
-export const HOTKEY_SECTIONS = [
+const HOTKEY_TRANSLATIONS = {
+  "annotation:submit": { label: "提交标注", description: "提交当前标注结果" },
+  "annotation:skip": { label: "跳过任务", description: "跳过当前任务" },
+  "annotation:undo": { label: "撤销", description: "撤销上一次操作" },
+  "annotation:redo": { label: "重做", description: "重做上一次撤销的操作" },
+  "dm.focus-previous": { label: "聚焦上一条任务", description: "将焦点移动到上一条任务" },
+  "dm.focus-next": { label: "聚焦下一条任务", description: "将焦点移动到下一条任务" },
+  "dm.close-labeling": { label: "聚焦已关闭任务", description: "将焦点移动到已关闭任务列" },
+  "dm.open-labeling": { label: "聚焦未关闭任务", description: "将焦点移动到未关闭任务列" },
+  "dm.toggle-bulk-sidebar-minimization": { label: "切换批量侧栏", description: "收起或展开批量操作侧栏" },
+  "region:delete-all": { label: "删除全部区域", description: "移除所有区域" },
+  "region:focus": { label: "聚焦首个区域", description: "将焦点移动到第一个可聚焦区域" },
+  "region:relation": { label: "创建区域关系", description: "为选中区域创建关系" },
+  "region:visibility": { label: "切换区域可见性", description: "显示或隐藏选中区域" },
+  "region:visibility-all": { label: "切换全部区域可见性", description: "显示或隐藏全部区域" },
+  "region:lock": { label: "锁定区域", description: "锁定或解锁选中区域" },
+  "region:meta": { label: "编辑区域元数据", description: "编辑选中区域的元数据" },
+  "region:unselect": { label: "取消选择区域", description: "取消当前选中的区域" },
+  "region:exit": { label: "退出区域模式", description: "退出关系模式并取消选中区域" },
+  "region:delete": { label: "删除选中区域", description: "删除当前选中的区域" },
+  "region:cycle": { label: "循环切换区域", description: "在所有区域之间循环切换" },
+  "region:duplicate": { label: "复制区域", description: "创建选中区域的副本" },
+  "segment:delete": { label: "删除分段", description: "删除选中的分段" },
+  "audio:back": { label: "后退 1 秒", description: "将音频回退 1 秒" },
+  "audio:playpause": { label: "播放/暂停音频", description: "切换音频播放状态" },
+  "audio:step-backward": { label: "后退一帧", description: "向后移动一帧" },
+  "audio:step-forward": { label: "前进一帧", description: "向前移动一帧" },
+  "media:playpause": { label: "播放/暂停视频", description: "切换视频播放状态" },
+  "media:step-backward": { label: "后退一帧", description: "向后移动一帧" },
+  "media:step-forward": { label: "前进一帧", description: "向前移动一帧" },
+  "video:keyframe-backward": { label: "上一个关键帧", description: "跳转到上一个关键帧" },
+  "video:keyframe-forward": { label: "下一个关键帧", description: "跳转到下一个关键帧" },
+  "video:backward": { label: "向后跳转", description: "向后定位视频" },
+  "video:rewind": { label: "第一帧", description: "跳转到第一帧" },
+  "video:forward": { label: "向前跳转", description: "向前定位视频" },
+  "video:fastforward": { label: "最后一帧", description: "跳转到最后一帧" },
+  "video:hop-backward": { label: "快速后跳", description: "快速向后跳转" },
+  "video:hop-forward": { label: "快速前跳", description: "快速向前跳转" },
+  "ts:grow-left": { label: "向左扩展", description: "将区域向左扩展" },
+  "ts:grow-right": { label: "向右扩展", description: "将区域向右扩展" },
+  "ts:shrink-left": { label: "左侧收缩", description: "从左侧收缩区域" },
+  "ts:shrink-right": { label: "右侧收缩", description: "从右侧收缩区域" },
+  "ts:grow-left-large": { label: "大幅向左扩展", description: "显著向左扩展区域" },
+  "ts:grow-right-large": { label: "大幅向右扩展", description: "显著向右扩展区域" },
+  "ts:shrink-left-large": { label: "大幅左侧收缩", description: "从左侧显著收缩区域" },
+  "ts:shrink-right-large": { label: "大幅右侧收缩", description: "从右侧显著收缩区域" },
+  "image:prev": { label: "上一张图片", description: "查看上一张图片" },
+  "image:next": { label: "下一张图片", description: "查看下一张图片" },
+  "tool:zoom-in": { label: "放大", description: "放大图片" },
+  "tool:pan-image": { label: "平移图片", description: "在图片上平移查看" },
+  "tool:zoom-to-fit": { label: "适应窗口", description: "缩放到完整图片适应当前视图" },
+  "tool:zoom-to-actual": { label: "缩放到 100%", description: "按图片实际大小显示（100%）" },
+  "tool:zoom-out": { label: "缩小", description: "缩小图片" },
+  "tool:move": { label: "移动工具", description: "选择移动工具以重新放置标注" },
+  "tool:brush": { label: "画笔工具", description: "选择画笔工具" },
+  "tool:ellipse": { label: "椭圆工具", description: "选择椭圆工具" },
+  "tool:eraser": { label: "橡皮擦工具", description: "选择橡皮擦工具" },
+  "tool:auto-detect": { label: "自动检测", description: "使用自动检测工具自动建议区域" },
+  "tool:key-point": { label: "关键点工具", description: "选择关键点标注工具" },
+  "tool:magic-wand": { label: "魔棒工具", description: "选择魔棒工具以进行智能区域选择" },
+  "tool:polygon": { label: "多边形工具", description: "选择多边形标注工具" },
+  "tool:rect": { label: "矩形工具", description: "选择矩形标注工具" },
+  "tool:rect-3point": { label: "三点矩形", description: "通过三点选择绘制旋转矩形" },
+  "tool:rotate-left": { label: "向左旋转", description: "将图片向左旋转 90°" },
+  "tool:rotate-right": { label: "向右旋转", description: "将图片向右旋转 90°" },
+  "tool:decrease-tool": { label: "减小工具大小", description: "减小工具大小" },
+  "tool:increase-tool": { label: "增大工具大小", description: "增大工具大小" },
+  "phrases:next-phrase": { label: "下一句", description: "在段落视图中跳转到下一句" },
+  "phrases:previous-phrase": { label: "上一句", description: "在段落视图中跳转到上一句" },
+  "phrases:select_all_annotate": { label: "全选并标注", description: "选中当前句子的全部文本并创建标注" },
+  "phrases:next-region": { label: "句内下一区域", description: "跳转到当前句子中的下一个区域" },
+  "phrases:previous-region": { label: "句内上一区域", description: "跳转到当前句子中的上一个区域" },
+};
+
+const BASE_HOTKEY_SECTIONS = [
   {
     id: "annotation",
-    title: "Annotation Actions",
-    description: "Shortcuts for common annotation tasks like submit, skip, undo and redo",
+    title: "标注操作",
+    description: "用于提交、跳过、撤销、重做等常见标注操作的快捷键",
   },
 
   {
     id: "data_manager",
-    title: "Data Manager",
-    description: "Shortcuts for navigating and managing tasks in Project's Data Manager",
+    title: "数据管理",
+    description: "用于在项目数据管理页中浏览和管理任务的快捷键",
   },
 
   {
     id: "regions",
-    title: "Region Management",
-    description: "Shortcuts for creating, selecting and manipulating annotation regions",
+    title: "区域管理",
+    description: "用于创建、选择和操作标注区域的快捷键",
   },
 
   {
     id: "tools",
-    title: "Tools",
-    description: "Shortcuts for controlling tools panel when labeling images",
+    title: "工具",
+    description: "用于图片标注时控制工具面板的快捷键",
   },
 
   {
     id: "audio",
-    title: "Audio Controls",
-    description: "Shortcuts for controlling audio playback and navigation",
+    title: "音频控制",
+    description: "用于控制音频播放和导航的快捷键",
   },
   {
     id: "video",
-    title: "Video Controls",
-    description: "Shortcuts for controlling video playback and navigation",
+    title: "视频控制",
+    description: "用于控制视频播放和导航的快捷键",
   },
   {
     id: "timeseries",
-    title: "Time Series Controls",
-    description: "Shortcuts for manipulating time series data regions",
+    title: "时间序列控制",
+    description: "用于操作时间序列数据区域的快捷键",
   },
   {
     id: "image_gallery",
-    title: "Image Gallery Navigation",
-    description: "Shortcuts for navigating between images in multi-image tasks",
+    title: "图片集导航",
+    description: "用于在多图任务中切换图片的快捷键",
   },
   {
     id: "paragraphs",
-    title: "Paragraph Navigation",
-    description: "Shortcuts for navigating phrases and regions in paragraph/dialogue view",
+    title: "段落导航",
+    description: "用于在段落或对话视图中浏览句子和区域的快捷键",
   },
 ];
+
+export const DEFAULT_HOTKEYS = BASE_DEFAULT_HOTKEYS.map((hotkey) => ({
+  ...hotkey,
+  ...(HOTKEY_TRANSLATIONS[hotkey.element] ?? {}),
+}));
+
+export const HOTKEY_SECTIONS = BASE_HOTKEY_SECTIONS;
 
 /**
  * URL patterns mapped to their corresponding hotkey sections

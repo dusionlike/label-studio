@@ -154,7 +154,7 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
               <Button
                 variant="neutral"
                 look="outlined"
-                tooltip="Keyboard Shortcuts"
+                tooltip="键盘快捷键"
                 data-testid="hotkeys-button"
                 size="small"
                 onClick={() => {
@@ -183,11 +183,11 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
               <Menu>
                 <Menu.Item
                   icon={<IconPersonInCircle />}
-                  label="Account &amp; Settings"
+                  label="账户与设置"
                   href={pages.AccountSettingsPage.path}
                 />
                 {/* <Menu.Item label="Dark Mode"/> */}
-                <Menu.Item icon={<IconDoor />} label="Log Out" href={absoluteURL("/logout")} data-external />
+                <Menu.Item icon={<IconDoor />} label="退出登录" href={absoluteURL("/logout")} data-external />
                 {showNewsletterDot && (
                   <>
                     <Menu.Divider />
@@ -195,7 +195,7 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
                       className={cn("newsletter-menu-item").toClassName()}
                       href={pages.AccountSettingsPage.path}
                     >
-                      <span>Please check new notification settings in the Account & Settings page</span>
+                      <span>请前往“账户与设置”页面查看新的通知设置</span>
                       <span className={cn("newsletter-menu-badge").toClassName()} />
                     </Menu.Item>
                   </>
